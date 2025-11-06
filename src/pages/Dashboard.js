@@ -104,7 +104,6 @@ const Dashboard = () => {
             borderColor: 'border-orange-100'
         }
     ];
-
     const leads = [
         {
             id: '#4511',
@@ -164,6 +163,15 @@ const Dashboard = () => {
             description: 'Small office relocation with IT equipment'
         }
     ];
+
+    // Leads search (frontend-only)
+    const [leadQuery, setLeadQuery] = useState('');
+    const filteredLeads = (!leadQuery.trim()) ? leads : leads.filter((l) => {
+        const q = leadQuery.trim().toLowerCase();
+        return [l.customer, l.id, l.location, l.moveType, l.email]
+            .filter(Boolean)
+            .some(v => String(v).toLowerCase().includes(q));
+    });
 
     const reviews = [
         {
@@ -549,11 +557,17 @@ const Dashboard = () => {
                             {/* Left: list */}
                             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden lg:col-span-1">
                                 <div className="p-3 border-b flex items-center gap-2">
-                                    <input className="flex-1 border rounded-md px-3 py-2 text-sm" placeholder="Customer, request id..." />
-                                    <button className="px-3 py-2 bg-orange-500 text-white rounded-md">Search</button>
+                                    <input
+                                        value={leadQuery}
+                                        onChange={(e)=>setLeadQuery(e.target.value)}
+                                        className="flex-1 border rounded-md px-3 py-2 text-sm"
+                                        placeholder="Customer, request id..." />
+                                    <button
+                                        onClick={()=>setLeadQuery(leadQuery.trim())}
+                                        className="px-3 py-2 bg-orange-500 text-white rounded-md">Search</button>
                                 </div>
                                 <div className="max-h-[70vh] overflow-y-auto divide-y">
-                                    {leads.map((l, i) => (
+                                    {filteredLeads.map((l, i) => (
                                         <button key={i} onClick={() => setSelectedLead(l)} className={`w-full text-left px-3 py-3 hover:bg-gray-50 ${selectedLead?.id === l.id ? 'bg-orange-50' : ''}`}>
                                             <div className="text-xs text-gray-500 mb-1">{l.receivedDate}</div>
                                             <div className="font-semibold text-gray-800 truncate">{l.customer} • {l.location}</div>
@@ -562,7 +576,7 @@ const Dashboard = () => {
                                         </button>
                                     ))}
                                 </div>
-                                <div className="p-3 text-xs text-gray-500 border-t">1-30 of {leads.length} leads</div>
+                                <div className="p-3 text-xs text-gray-500 border-t">Showing {filteredLeads.length} of {leads.length} leads</div>
                             </div>
 
                             {/* Right: detail pane */}
@@ -620,17 +634,11 @@ const Dashboard = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 md:p-6 flex flex-col sm:flex-row gap-3 rounded-b-2xl">
+                        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 md:p-6 flex items-center justify-end rounded-b-2xl">
                             <button
                                 onClick={closeModal}
-                                className="flex-1 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-300">
+                                className="px-4 py-2 bg-black border-2 border-gray-300 text-white text-sm font-medium rounded-md hover:bg-gray-50 transition-all duration-300">
                                 Close
-                            </button>
-                            <button className="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                                </svg>
-                                Call Customer
                             </button>
                         </div>
                     </div>
