@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Reviews from '../components/reviews/Reviews';
 import MoverProfileModal from '../components/dashboard/MoverProfileModal';
+import BusinessProfile from '../components/dashboard/BusinessProfile';
 
 const Dashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
@@ -8,6 +9,7 @@ const Dashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
     const [showNotif, setShowNotif] = useState(false);
+    const [isVerified, setIsVerified] = useState(true);
     const [profile, setProfile] = useState({
         business: {
             company: 'Premier Moving Co.',
@@ -322,6 +324,21 @@ const Dashboard = () => {
                             </span>
                         </button>
                         <button
+                            onClick={() => setActiveTab('business')}
+                            className={`py-4 px-2 border-b-2 font-medium transition-colors whitespace-nowrap text-sm md:text-base ${activeTab === 'business'
+                                ? 'border-orange-500 text-orange-600'
+                                : 'border-transparent text-gray-600 hover:text-gray-800'
+                                }`}
+                        >
+                            <span className="flex items-center gap-2">
+                                <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z" />
+                                    <path d="M6 8h8v2H6V8zm0 4h8v2H6v-2z" />
+                                </svg>
+                                My Business
+                            </span>
+                        </button>
+                        <button
                             onClick={() => setActiveTab('reviews')}
                             className={`py-4 px-2 border-b-2 font-medium transition-colors whitespace-nowrap text-sm md:text-base ${activeTab === 'reviews'
                                 ? 'border-orange-500 text-orange-600'
@@ -509,338 +526,92 @@ const Dashboard = () => {
                 {/* Leads Tab */}
                 {activeTab === 'leads' && (
                     <div>
-                        {/* Header Section */}
-                        <div className="mb-6">
-                            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">My Leads</h1>
-                            <p className="text-sm text-gray-600">Manage leads received through your subscription plan</p>
-                        </div>
-
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-                            <div className="bg-white rounded-xl p-5 md:p-6 border-2 border-blue-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm font-medium text-gray-600">Current Plan</p>
-                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                    </svg>
-                                </div>
-                                <p className="text-2xl md:text-3xl font-bold text-gray-800">Professional</p>
-                            </div>
-
-                            <div className="bg-white rounded-xl p-5 md:p-6 border-2 border-green-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm font-medium text-gray-600">Leads This Month</p>
-                                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                    </svg>
-                                </div>
-                                <p className="text-2xl md:text-3xl font-bold text-gray-800">3/25</p>
-                            </div>
-
-                            <div className="bg-white rounded-xl p-5 md:p-6 border-2 border-purple-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm font-medium text-gray-600">Remaining Leads</p>
-                                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                    </svg>
-                                </div>
-                                <p className="text-2xl md:text-3xl font-bold text-gray-800">22</p>
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Leads</h1>
+                            <div className="flex items-center gap-2 text-sm">
+                                <button className="px-3 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">Export all</button>
+                                <button className="px-3 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">Print all</button>
                             </div>
                         </div>
 
-                        {/* Lead Cards */}
-                        <div className="space-y-4 md:space-y-6">
-                            {leads.map((lead, index) => (
-                                <div key={index} className="bg-white rounded-xl md:rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-gray-200 overflow-hidden">
-                                    {/* Lead Header */}
-                                    <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50">
-                                        <div className="flex flex-wrap items-center justify-between gap-3">
-                                            <div className="flex items-center gap-3">
-                                                <h3 className="text-lg font-bold text-gray-800">Lead {lead.id}</h3>
-                                                <span className={`px-3 py-1 ${lead.statusColor} text-white text-xs font-medium rounded-full`}>
-                                                    {lead.status}
-                                                </span>
-                                                <span className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded-full">
-                                                    {lead.bedrooms}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-gray-600">Received {lead.receivedDate}</p>
+                        {!isVerified && (
+                            <div className="mb-4 p-3 rounded-lg border border-yellow-300 bg-yellow-50 text-sm text-yellow-900 flex items-center gap-2">
+                                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zM8 8V6a2 2 0 114 0v2H8z" clipRule="evenodd"/></svg>
+                                Account is not verified by admin yet. Details are locked.
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            {/* Left: list */}
+                            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden lg:col-span-1">
+                                <div className="p-3 border-b flex items-center gap-2">
+                                    <input className="flex-1 border rounded-md px-3 py-2 text-sm" placeholder="Customer, request id..." />
+                                    <button className="px-3 py-2 bg-orange-500 text-white rounded-md">Search</button>
+                                </div>
+                                <div className="max-h-[70vh] overflow-y-auto divide-y">
+                                    {leads.map((l, i) => (
+                                        <button key={i} onClick={() => setSelectedLead(l)} className={`w-full text-left px-3 py-3 hover:bg-gray-50 ${selectedLead?.id === l.id ? 'bg-orange-50' : ''}`}>
+                                            <div className="text-xs text-gray-500 mb-1">{l.receivedDate}</div>
+                                            <div className="font-semibold text-gray-800 truncate">{l.customer} • {l.location}</div>
+                                            <div className="text-xs text-gray-600 truncate">{l.moveType}</div>
+                                            <div className="mt-1 text-[11px] text-gray-500">Expired (temporary number)</div>
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="p-3 text-xs text-gray-500 border-t">1-30 of {leads.length} leads</div>
+                            </div>
+
+                            {/* Right: detail pane */}
+                            <div className="relative bg-white rounded-xl border border-gray-200 overflow-hidden lg:col-span-2 min-h-[60vh]">
+                                {selectedLead ? (
+                                    <div className={`p-4 ${!isVerified ? 'pointer-events-none blur-sm' : ''}`}>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <div className="h-10 bg-gray-100 rounded" />
+                                            <div className="h-10 bg-gray-100 rounded" />
+                                            <div className="h-10 bg-gray-100 rounded" />
+                                            <div className="h-10 bg-gray-100 rounded" />
                                         </div>
-                                    </div>
-
-                                    {/* Lead Content */}
-                                    <div className="p-4 md:p-6">
-                                        {/* Move Info */}
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                            <div className="flex items-start gap-3">
-                                                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                                                </svg>
+                                        <div className="border rounded-lg">
+                                            <div className="flex items-center gap-4 border-b px-4 py-2 text-sm">
+                                                <button className="px-3 py-1 rounded-md bg-orange-500 text-white">Details</button>
+                                                <button className="px-3 py-1 rounded-md border text-gray-700">Notes</button>
+                                                <button className="px-3 py-1 rounded-md border text-gray-700">History</button>
+                                            </div>
+                                            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
-                                                    <p className="text-xs text-gray-500 mb-1">{lead.moveType}</p>
+                                                    <div className="text-xs text-gray-500 mb-1">Lead number</div>
+                                                    <div className="h-9 bg-gray-100 rounded" />
                                                 </div>
-                                            </div>
-
-                                            <div className="flex items-start gap-3">
-                                                <svg className="w-5 h-5 text-purple-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                                                </svg>
                                                 <div>
-                                                    <p className="text-xs text-gray-500 mb-1">{lead.moveService}</p>
+                                                    <div className="text-xs text-gray-500 mb-1">Lead date</div>
+                                                    <div className="h-9 bg-gray-100 rounded" />
                                                 </div>
-                                            </div>
-
-                                            <div className="flex items-start gap-3">
-                                                <svg className="w-5 h-5 text-gray-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                                                </svg>
                                                 <div>
-                                                    <p className="text-xs text-gray-500 mb-1">{lead.moveDate}</p>
+                                                    <div className="text-xs text-gray-500 mb-1">Lead fee</div>
+                                                    <div className="h-9 bg-gray-100 rounded" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs text-gray-500 mb-1">Lead type</div>
+                                                    <div className="h-9 bg-gray-100 rounded" />
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-6 text-sm text-gray-600">Select a lead from the list to view details.</div>
+                                )}
 
-                                        {/* Description */}
-                                        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                                            <p className="text-sm text-gray-700">{lead.description}</p>
-                                        </div>
-
-                                        {/* Customer Details */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                            <div className="space-y-4">
-                                                <div className="flex items-start gap-3">
-                                                    <svg className="w-4 h-4 text-gray-500 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                                                    </svg>
-                                                    <div>
-                                                        <p className="text-xs text-gray-500 mb-1">Customer</p>
-                                                        <p className="font-medium text-gray-800">{lead.customer}</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-start gap-3">
-                                                    <svg className="w-4 h-4 text-gray-500 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                                                    </svg>
-                                                    <div>
-                                                        <p className="text-xs text-gray-500 mb-1">Phone Number</p>
-                                                        <p className="font-medium text-gray-800">{lead.phone}</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-start gap-3">
-                                                    <svg className="w-4 h-4 text-gray-500 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                                                    </svg>
-                                                    <div>
-                                                        <p className="text-xs text-gray-500 mb-1">Email</p>
-                                                        <p className="font-medium text-gray-800">{lead.email}</p>
-                                                    </div>
-                                                </div>
+                                {!isVerified && selectedLead && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="text-center bg-white/70 backdrop-blur-sm p-6 rounded-xl border">
+                                            <div className="mx-auto w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-3">
+                                                <svg className="w-6 h-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zM8 8V6a2 2 0 114 0v2H8z" clipRule="evenodd"/></svg>
                                             </div>
-
-                                            <div className="space-y-4">
-                                                <div className="flex items-start gap-3">
-                                                    <svg className="w-4 h-4 text-gray-500 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                                                    </svg>
-                                                    <div className="flex-1">
-                                                        <p className="text-xs text-gray-500 mb-1">{lead.fromAddress}</p>
-                                                        <p className="text-xs text-gray-500 mb-1">to</p>
-                                                        <p className="text-xs text-gray-500 mb-1">{lead.toAddress}</p>
-                                                        <p className="text-xs text-gray-500 mt-2">{lead.distance}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Items */}
-                                        <div className="mb-6 flex items-start gap-3">
-                                            <svg className="w-4 h-4 text-gray-500 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                                            </svg>
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-1">Items</p>
-                                                <p className="text-sm text-gray-700">{lead.items}</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Action Buttons */}
-                                        <div className="flex flex-col sm:flex-row gap-3">
-                                            <button
-                                                onClick={() => openLeadDetails(lead)}
-                                                className="flex-1 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-300 flex items-center justify-center gap-2">
-                                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                                                </svg>
-                                                View Full Details
-                                            </button>
-                                            <button className="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
-                                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                                                </svg>
-                                                Call Customer
-                                            </button>
+                                            <div className="font-semibold text-gray-800">Details locked</div>
+                                            <div className="text-sm text-gray-600">Your account must be verified by admin to view full lead details.</div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Reviews Tab */}
-                {activeTab === 'reviews' && <Reviews reviews={reviews} />}
-            </div>
-
-            {/* Modal for Lead Details */}
-            {showModal && selectedLead && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={closeModal}>
-                    <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                        {/* Modal Header */}
-                        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 md:p-6 flex items-center justify-between rounded-t-2xl">
-                            <div>
-                                <h2 className="text-xl md:text-2xl font-bold text-gray-800">Lead {selectedLead.id} - Complete Details</h2>
-                                <p className="text-sm text-gray-600 mt-1">View all details from the customer's quote request</p>
-                            </div>
-                            <button
-                                onClick={closeModal}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Modal Content */}
-                        <div className="p-4 md:p-6 space-y-6">
-                            {/* Customer Information */}
-                            <div className="bg-gray-50 rounded-xl p-4 md:p-5">
-                                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                    <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                                    </svg>
-                                    Customer Information
-                                </h3>
-                                <div className="space-y-3">
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Name</p>
-                                        <p className="font-medium text-gray-800">{selectedLead.customer}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                                        </svg>
-                                        <p className="text-sm text-gray-700">{selectedLead.phone}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                                        </svg>
-                                        <p className="text-sm text-gray-700">{selectedLead.email}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Move Details */}
-                            <div className="bg-gray-50 rounded-xl p-4 md:p-5">
-                                <h3 className="text-lg font-bold text-gray-800 mb-4">Move Details</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Move Type</p>
-                                        <p className="text-sm font-medium text-gray-800">Residential Move</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Moving Service</p>
-                                        <p className="text-sm font-medium text-gray-800">{selectedLead.moveType}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Assistance Type</p>
-                                        <p className="text-sm font-medium text-gray-800">{selectedLead.moveService}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Area Size</p>
-                                        <p className="text-sm font-medium text-gray-800">{selectedLead.bedrooms}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">State Type</p>
-                                        <p className="text-sm font-medium text-gray-800">Out Of-State</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Move Date</p>
-                                        <p className="text-sm font-medium text-gray-800">{selectedLead.moveDate}</p>
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <p className="text-xs text-gray-500 mb-2">Project Description</p>
-                                    <p className="text-sm text-gray-700">{selectedLead.description}</p>
-                                </div>
-                            </div>
-
-                            {/* Location Details */}
-                            <div className="bg-gray-50 rounded-xl p-4 md:p-5">
-                                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                    <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                                    </svg>
-                                    Location Details
-                                </h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Project Address</p>
-                                        <p className="text-sm font-medium text-gray-800">{selectedLead.fromAddress.split(',')[0]}</p>
-                                        <p className="text-sm text-gray-600">{selectedLead.fromAddress.split(',').slice(1).join(',')}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Moving From</p>
-                                        <p className="text-sm text-gray-700">{selectedLead.fromAddress}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Moving To</p>
-                                        <p className="text-sm text-gray-700">{selectedLead.toAddress}</p>
-                                        <p className="text-xs text-gray-500 mt-1">ZIP: {selectedLead.toAddress.match(/\d{5}/)?.[0]}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Distance</p>
-                                        <p className="text-sm font-medium text-gray-800">{selectedLead.distance}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Additional Information */}
-                            <div className="bg-gray-50 rounded-xl p-4 md:p-5">
-                                <h3 className="text-lg font-bold text-gray-800 mb-4">Additional Information</h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-2">Items to Move</p>
-                                        <p className="text-sm text-gray-700">{selectedLead.items}</p>
-                                    </div>
-                                    {selectedLead.id === '#4511' && (
-                                        <>
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-2">Special Items</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <span className="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm text-gray-700">Piano</span>
-                                                    <span className="px-3 py-1 bg-white border border-gray-300 rounded-full text-sm text-gray-700">Antique furniture</span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-2">Additional Notes</p>
-                                                <p className="text-sm text-gray-700">Have stairs at both locations. Need insurance for valuable items.</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-2">Customer Notes (In Their Own Words)</p>
-                                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                                                    <li>This is a cross country move for job relocation</li>
-                                                    <li>Large home with basement and attic full of items</li>
-                                                </ul>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                )}
                             </div>
                         </div>
 
@@ -859,8 +630,16 @@ const Dashboard = () => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+
+                {/* My Business Tab */}
+                {activeTab === 'business' && (
+                    <BusinessProfile />
+                )}
+
+                {/* Reviews Tab */}
+                {activeTab === 'reviews' && <Reviews reviews={reviews} />}
+            </div>
         </div>
     );
 };
