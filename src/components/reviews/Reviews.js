@@ -4,20 +4,10 @@ import ReviewMetrics from './ReviewMetrics';
 import ReviewCard from './ReviewCard';
 
 const Reviews = ({ reviews }) => {
-    const [tab, setTab] = useState('all'); // all | request | feedback
+    const [tab, setTab] = useState('all'); // all | feedback
     const [filter, setFilter] = useState('all'); // all | 5 | 4 | 3
-    const [confirmName, setConfirmName] = useState(null);
-    const [emailForm, setEmailForm] = useState({ to: '', from: 'owner@company.com', message: 'Hello,\n\nWe appreciate the opportunity to work with you and, if you are happy with our service, we invite you to leave a review for us.\n\nThank you!' });
     const [showGoogleModal, setShowGoogleModal] = useState(false);
     const [connectedGoogle, setConnectedGoogle] = useState(false);
-
-    const customers = [
-        { name: 'Maria Adasczik', service: 'Find Moving Services - Out of State', leadDate: '10/07/2025' },
-        { name: 'Mauricio Carpio', service: 'Find Moving Services - Out of State', leadDate: '09/30/2025' },
-        { name: 'Emilie Esders', service: 'Find Moving Services - Out of State', leadDate: '09/10/2025' },
-        { name: 'Kevin Huntly', service: 'Find Moving Services - Out of State', leadDate: '09/10/2025' },
-        { name: 'Jean Diaz', service: 'Find Moving Services - Out of State', leadDate: '09/09/2025' },
-    ];
 
     const filtered = reviews.filter(r => filter === 'all' || r.rating === Number(filter));
 
@@ -29,11 +19,10 @@ const Reviews = ({ reviews }) => {
                 <p className="text-sm text-gray-600">Manage customer reviews and requests</p>
             </div>
 
-            {/* Sub Tabs */}
+            {/* Sub Tabs (request tab removed) */}
             <div className="mb-6 border-b border-gray-200">
                 <div className="flex gap-6 overflow-x-auto">
                     <button onClick={()=>setTab('all')} className={`py-2 border-b-2 -mb-px font-medium ${tab==='all'?'border-orange-500 text-orange-600':'border-transparent text-gray-600 hover:text-gray-800'}`}>All reviews</button>
-                    <button onClick={()=>setTab('request')} className={`py-2 border-b-2 -mb-px font-medium ${tab==='request'?'border-orange-500 text-orange-600':'border-transparent text-gray-600 hover:text-gray-800'}`}>Request reviews</button>
                     <button onClick={()=>setTab('feedback')} className={`py-2 border-b-2 -mb-px font-medium ${tab==='feedback'?'border-orange-500 text-orange-600':'border-transparent text-gray-600 hover:text-gray-800'}`}>Feedback</button>
                 </div>
             </div>
@@ -62,17 +51,7 @@ const Reviews = ({ reviews }) => {
                 </div>
             )}
 
-            {tab === 'request' && (
-                <div>
-                    {/**
-                     * Request reviews section commented out as per requirement.
-                     *
-                     * <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                     *   ... original content ...
-                     * </div>
-                     */}
-                </div>
-            )}
+            {/* Request reviews tab removed */}
 
             {tab === 'feedback' && (
                 <div className="space-y-4">
@@ -108,19 +87,7 @@ const Reviews = ({ reviews }) => {
                 </div>
             )}
 
-            {/* Confirm modal for send request */}
-            {confirmName && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={()=>setConfirmName(null)}>
-                    <div className="bg-white rounded-xl w-full max-w-md p-5" onClick={(e)=>e.stopPropagation()}>
-                        <div className="text-lg font-semibold text-gray-800 mb-3">Request a review</div>
-                        <p className="text-sm text-gray-700 mb-4">Request a review from <span className="font-semibold">{confirmName}</span>?</p>
-                        <div className="flex justify-end gap-2">
-                            <button onClick={()=>setConfirmName(null)} className="px-4 py-2 rounded-lg border">Cancel</button>
-                            <button onClick={()=>setConfirmName(null)} className="px-4 py-2 rounded-lg bg-blue-600 text-white">Send request</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Confirm modal removed with request reviews */}
 
             {/* Google connect modal (mock sign-in) */}
             {showGoogleModal && (

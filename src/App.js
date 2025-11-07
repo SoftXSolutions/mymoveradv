@@ -15,6 +15,15 @@ import SignInMover from './pages/SignInMover';
 import RegistrationSuccess from './pages/RegistrationSuccess';
 import UserDashboard from './pages/UserDashboard';
 import TruckerProfile from './pages/TruckerProfile';
+import MoverDetails from './pages/MoverDetails';
+import MovingTips from './pages/MovingTips';
+import PricingPlans from './pages/PricingPlans';
+import SuccessStories from './pages/SuccessStories';
+import Resources from './pages/Resources';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 function App() {
   return (
@@ -36,7 +45,16 @@ function App() {
             <Route path="/signin-mover" element={<SignInMover />} />
             <Route path="/registration-success" element={<RegistrationSuccess />} />
             <Route path="/user" element={<UserDashboard />} />
+            <Route path="/movers/:slug" element={<MoverDetails />} />
             <Route path="/truckers/:id" element={<TruckerProfile />} />
+            <Route path="/moving-tips" element={<MovingTips />} />
+            <Route path="/pricing-plans" element={<PricingPlans />} />
+            <Route path="/success-stories" element={<SuccessStories />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             </Routes>
           </main>
           <Footer />

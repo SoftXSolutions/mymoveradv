@@ -1,9 +1,41 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import PageHeader from '../PageHeader';
 import SearchBar from '../SearchBar';
 import BulkActions from '../BulkActions';
 
 const STATUS_OPTIONS = ['All Status', 'Pending', 'On Hold', 'Distributed', 'Claimed', 'Quoted'];
+
+// Local storage helpers to fetch user-submitted leads from Get Quote
+const getStoredRequests = () => {
+  try {
+    const arr = JSON.parse(localStorage.getItem('myRequests') || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveStoredRequests = (arr) => {
+  localStorage.setItem('myRequests', JSON.stringify(arr));
+};
+
+const mapRequestsToLeads = (reqs) => {
+  if (!Array.isArray(reqs) || reqs.length === 0) return sampleLeads;
+  return reqs.map((r) => ({
+    id: r.id || `RQ-${Math.random().toString(36).slice(2,8)}`,
+    customer: { name: r.name || 'User', email: r.email || '—' },
+    details: {
+      move: `${[r.from?.city, r.from?.zip].filter(Boolean).join(' ') || 'From'} → ${[r.to?.city, r.to?.zip].filter(Boolean).join(' ') || 'To'}`,
+      distance: r.distance || '',
+      date: r.date || ''
+    },
+    status: r.status || 'Pending',
+    tier: 'standard',
+    score: 70,
+    distribution: r.assignedMovers?.length ? `${r.assignedMovers.length} mover${r.assignedMovers.length>1?'s':''}` : null,
+    created: r.date || '—'
+  }));
+};
 
 const sampleLeads = [
   {
@@ -80,6 +112,7 @@ const LeadsTable = ({ leads, selected, onToggle, onToggleAll, onEdit, onDistribu
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Tier/Score</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Distribution</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Assign</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Created</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
             </tr>
@@ -117,15 +150,19 @@ const LeadsTable = ({ leads, selected, onToggle, onToggleAll, onEdit, onDistribu
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-700">{l.distribution || '—'}</td>
+                <td className="px-6 py-4">
+                  <button onClick={() => onDistribute(l)} className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg" title="Assign Movers">
+                    {/* User icon */}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A7 7 0 0112 15a7 7 0 016.879 2.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  </button>
+                </td>
                 <td className="px-6 py-4 text-sm text-gray-600">{l.created}</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     <button onClick={() => onEdit(l)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg" title="Edit">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </button>
-                    <button onClick={() => onDistribute(l)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg" title="Distribute">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    </button>
+                    {/* Removed message icon button */}
                   </div>
                 </td>
               </tr>
@@ -155,7 +192,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 };
 
 const LeadsManagement = () => {
-  const [leads, setLeads] = useState(sampleLeads);
+  const [leads, setLeads] = useState(mapRequestsToLeads(getStoredRequests()));
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('All Status');
   const [selected, setSelected] = useState([]);
@@ -163,6 +200,15 @@ const LeadsManagement = () => {
   const [showDistribute, setShowDistribute] = useState(false);
   const [distributeFor, setDistributeFor] = useState(null);
   const [selectedMovers, setSelectedMovers] = useState([]);
+
+  // keep table in sync with new quotes
+  useEffect(() => {
+    const sync = () => setLeads(mapRequestsToLeads(getStoredRequests()));
+    window.addEventListener('storage', sync);
+    // also refresh when component mounts
+    sync();
+    return () => window.removeEventListener('storage', sync);
+  }, []);
 
   const filtered = useMemo(() => {
     return leads.filter(l => {
@@ -182,8 +228,34 @@ const LeadsManagement = () => {
   const onToggle = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const onToggleAll = () => setSelected(prev => (prev.length === filtered.length ? [] : filtered.map(l => l.id)));
 
+  const confirmDistribute = () => {
+    if (!distributeFor || selectedMovers.length === 0) return;
+    // persist to localStorage
+    const reqs = getStoredRequests();
+    const updated = reqs.map(r => {
+      if (r.id === distributeFor.id) {
+        return { ...r, assignedMovers: selectedMovers, status: 'Distributed' };
+      }
+      return r;
+    });
+    saveStoredRequests(updated);
+    // update table
+    setLeads(prev => prev.map(l => l.id === distributeFor.id ? {
+      ...l,
+      status: 'Distributed',
+      distribution: `${selectedMovers.length} mover${selectedMovers.length>1?'s':''}`
+    } : l));
+    closeDistribute();
+  };
+
   const onSaveEdit = () => {
-    setLeads(prev => prev.map(l => l.id === editLead.id ? editLead : l));
+    if (!editLead) return;
+    // persist status to localStorage myRequests
+    const reqs = getStoredRequests();
+    const updatedReqs = reqs.map(r => r.id === editLead.id ? { ...r, status: editLead.status } : r);
+    saveStoredRequests(updatedReqs);
+    // update table state
+    setLeads(prev => prev.map(l => l.id === editLead.id ? { ...l, status: editLead.status } : l));
     setEditLead(null);
   };
 
@@ -191,16 +263,6 @@ const LeadsManagement = () => {
     setShowDistribute(false);
     setDistributeFor(null);
     setSelectedMovers([]);
-  };
-
-  const confirmDistribute = () => {
-    if (!distributeFor || selectedMovers.length === 0) return;
-    setLeads(prev => prev.map(l => l.id === distributeFor.id ? {
-      ...l,
-      status: 'Distributed',
-      distribution: `${selectedMovers.length} mover${selectedMovers.length>1?'s':''}`
-    } : l));
-    closeDistribute();
   };
 
   return (
@@ -255,24 +317,10 @@ const LeadsManagement = () => {
         {editLead && (
           <div className="grid gap-3">
             <div>
-              <label className="text-sm text-gray-600">Customer Name</label>
-              <input value={editLead.customer.name} onChange={e => setEditLead({ ...editLead, customer: { ...editLead.customer, name: e.target.value } })} className="mt-1 w-full border rounded-lg px-3 py-2" />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Email</label>
-              <input value={editLead.customer.email} onChange={e => setEditLead({ ...editLead, customer: { ...editLead.customer, email: e.target.value } })} className="mt-1 w-full border rounded-lg px-3 py-2" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm text-gray-600">Move Type</label>
-                <input value={editLead.details.move} onChange={e => setEditLead({ ...editLead, details: { ...editLead.details, move: e.target.value } })} className="mt-1 w-full border rounded-lg px-3 py-2" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">Status</label>
-                <select value={editLead.status} onChange={e => setEditLead({ ...editLead, status: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2">
-                  {['Pending','On Hold','Distributed','Claimed','Quoted'].map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
+              <label className="text-sm text-gray-600">Status</label>
+              <select value={editLead.status} onChange={e => setEditLead({ ...editLead, status: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2">
+                {['Pending','On Hold','Distributed','Claimed','Quoted'].map(s => <option key={s}>{s}</option>)}
+              </select>
             </div>
           </div>
         )}
@@ -291,17 +339,31 @@ const LeadsManagement = () => {
           </div>
         }
       >
-        <div className="space-y-2">
-          {['Premier Moving Co.','Swift Movers LLC','Elite Moving Services','Family First Movers'].map((m,i)=> {
-            const checked = selectedMovers.includes(m);
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[
+            {name:'Premier Moving Co.', rating:4.8, reviews:2100, plan:'Premium'},
+            {name:'Swift Movers LLC', rating:4.6, reviews:1800, plan:'Professional'},
+            {name:'Elite Moving Services', rating:4.9, reviews:3200, plan:'Premium'},
+            {name:'Family First Movers', rating:4.7, reviews:1400, plan:'Professional'}
+          ].map((m,i)=> {
+            const checked = selectedMovers.includes(m.name);
+            const initials = m.name.split(' ').map(w=>w[0]).slice(0,2).join('');
             return (
-              <label key={i} className={`flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 ${checked?'border-black':''}`}>
-                <input type="checkbox" checked={checked} onChange={() => setSelectedMovers(prev => checked ? prev.filter(x=>x!==m) : [...prev, m])} className="rounded" />
-                <div>
-                  <div className="font-medium text-gray-800">{m}</div>
-                  <div className="text-xs text-gray-500">Professional Plan • 4.8★</div>
+              <button key={i} onClick={() => setSelectedMovers(prev => checked ? prev.filter(x=>x!==m.name) : [...prev, m.name])} className={`text-left p-3 rounded-xl border hover:bg-gray-50 transition ${checked?'border-black ring-1 ring-black':''}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-semibold">{initials}</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-800">{m.name}</div>
+                    <div className="text-xs text-gray-500 flex items-center gap-2">
+                      <span className="text-yellow-500">★</span>
+                      <span>{m.rating}</span>
+                      <span className="text-gray-400">•</span>
+                      <span>{m.reviews.toLocaleString()} reviews</span>
+                      <span className={`ml-auto px-2 py-0.5 rounded text-xs border ${m.plan==='Premium'?'bg-purple-50 text-purple-700 border-purple-200':'bg-blue-50 text-blue-700 border-blue-200'}`}>{m.plan}</span>
+                    </div>
+                  </div>
                 </div>
-              </label>
+              </button>
             );
           })}
         </div>

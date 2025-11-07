@@ -155,7 +155,7 @@ const GetQuote = () => {
                         <input className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="City" value={form.fromCity} onChange={set('fromCity')} />
                         <input className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="State" value={form.fromState} onChange={set('fromState')} />
                           <input className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Street Address" value={form.fromAddress} onChange={set('fromAddress')} />
-                        <input type="date" className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" value={form.fromDate} onChange={set('fromDate')} />
+                        
                       </div>
                     </div>
                     <div className="border rounded-lg p-4">
@@ -167,6 +167,9 @@ const GetQuote = () => {
                         <input className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" placeholder="Street Address" value={form.toAddress} onChange={set('toAddress')} />
                       </div>
                     </div>
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <input type="date" className="w-full md:w-72 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400" value={form.fromDate} onChange={set('fromDate')} />
                   </div>
                 </div>
               )}
@@ -344,53 +347,40 @@ const GetQuote = () => {
                         <div className="font-semibold text-gray-700 mb-3">Locations</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            </div>
-                            <div className="rounded-lg border p-4">
-                              <div className="font-semibold text-gray-700 mb-2">Contact</div>
-                              <div className="text-sm text-gray-600 space-y-1">
-                                <div><span className="font-medium text-gray-800">Name:</span> {[form.firstName, form.lastName].filter(Boolean).join(' ') || '—'}</div>
-                                <div><span className="font-medium text-gray-800">Phone:</span> {form.phone || '—'}</div>
-                                <div><span className="font-medium text-gray-800">Email:</span> {form.email || '—'}</div>
-                              </div>
+                            <div className="text-sm font-medium text-gray-700 mb-1">🏁 Moving From</div>
+                            <div className="text-sm text-gray-600">
+                              <div>{form.fromAddress || '—'}</div>
+                              <div>{[form.fromCity, form.fromState, form.fromZip].filter(Boolean).join(', ') || '—'}</div>
+                              <div className="mt-1 text-xs text-gray-500">📅 {form.fromDate || '—'}</div>
                             </div>
                           </div>
-
-                          <div className="rounded-lg border p-4">
-                            <div className="font-semibold text-gray-700 mb-3">Locations</div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <div className="text-sm font-medium text-gray-700 mb-1">🏁 Moving From</div>
-                                <div className="text-sm text-gray-600">
-                                  <div>{form.fromAddress || '—'}</div>
-                                  <div>{[form.fromCity, form.fromState, form.fromZip].filter(Boolean).join(', ') || '—'}</div>
-                                  <div className="mt-1 text-xs text-gray-500">📅 {form.fromDate || '—'}</div>
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-700 mb-1">📍 Moving To</div>
-                                <div className="text-sm text-gray-600">
-                                  <div>{form.toAddress || '—'}</div>
-                                  <div>{[form.toCity, form.toState, form.toZip].filter(Boolean).join(', ') || '—'}</div>
-                                </div>
-                              </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-700 mb-1">📍 Moving To</div>
+                            <div className="text-sm text-gray-600">
+                              <div>{form.toAddress || '—'}</div>
+                              <div>{[form.toCity, form.toState, form.toZip].filter(Boolean).join(', ') || '—'}</div>
                             </div>
-                              <>
-                                <div><span className="font-medium text-gray-800">Piano Type:</span> {form.pianoType || '—'}</div>
-                                <div><span className="font-medium text-gray-800">Floors/Stairs:</span> {form.pianoStairs || '—'}</div>
-                              </>
-                            )}
-                            {form.assistance === 'Truck or Container Rental' && (
-                              <div><span className="font-medium text-gray-800">Truck/Container Size:</span> {form.truckSize || '—'}</div>
-                            )}
-                            {form.assistance === 'Vehicle Move' && (
-                              <>
-                                <div><span className="font-medium text-gray-800">Vehicle Type:</span> {form.vehicleType || '—'}</div>
-                                <div><span className="font-medium text-gray-800">Make/Model/Year:</span> {[form.vehicleMake, form.vehicleModel, form.vehicleYear].filter(Boolean).join(' ') || '—'}</div>
-                              </>
-                            )}
                           </div>
                         </div>
-                      )}
+
+                        {form.assistance === 'Move a Piano' && (
+                          <div className="mt-4 text-sm text-gray-600 space-y-1">
+                            <div><span className="font-medium text-gray-800">Piano Type:</span> {form.pianoType || '—'}</div>
+                            <div><span className="font-medium text-gray-800">Floors/Stairs:</span> {form.pianoStairs || '—'}</div>
+                          </div>
+                        )}
+                        {form.assistance === 'Truck or Container Rental' && (
+                          <div className="mt-4 text-sm text-gray-600">
+                            <span className="font-medium text-gray-800">Truck/Container Size:</span> {form.truckSize || '—'}
+                          </div>
+                        )}
+                        {form.assistance === 'Vehicle Move' && (
+                          <div className="mt-4 text-sm text-gray-600 space-y-1">
+                            <div><span className="font-medium text-gray-800">Vehicle Type:</span> {form.vehicleType || '—'}</div>
+                            <div><span className="font-medium text-gray-800">Make/Model/Year:</span> {[form.vehicleMake, form.vehicleModel, form.vehicleYear].filter(Boolean).join(' ') || '—'}</div>
+                          </div>
+                        )}
+                      </div>
 
                       <div className="rounded-lg border p-4">
                         <div className="font-semibold text-gray-700 mb-2">Project Description</div>
@@ -415,7 +405,6 @@ const GetQuote = () => {
             isOpen={showOTP}
             phone={form.phone}
             onClose={() => setShowOTP(false)}
-            hintCode={demoOtp}
             onVerify={() => {
               setShowOTP(false);
               try {
@@ -423,6 +412,8 @@ const GetQuote = () => {
                 const req = {
                   id: `#RQ-${Date.now().toString().slice(-6)}`,
                   date: new Date().toISOString().slice(0,10),
+                  name: [form.firstName, form.lastName].filter(Boolean).join(' ').trim(),
+                  email: form.email,
                   from: {
                     address: form.fromAddress,
                     city: form.fromCity,

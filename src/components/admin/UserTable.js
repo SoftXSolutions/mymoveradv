@@ -1,4 +1,4 @@
-const UserTable = ({ users, onEdit, onDelete, selectedUsers, onSelectUser, onSelectAll }) => {
+const UserTable = ({ users, onEdit, onDelete, selectedUsers, onSelectUser, onSelectAll, onAssign }) => {
   const allSelected = users.length > 0 && selectedUsers.length === users.length;
   const someSelected = selectedUsers.length > 0 && selectedUsers.length < users.length;
 
@@ -106,6 +106,15 @@ const UserTable = ({ users, onEdit, onDelete, selectedUsers, onSelectUser, onSel
                 <td className="px-6 py-4 text-sm text-gray-600">{user.lastActive}</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => onAssign && onAssign(user)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      title="Assign Movers"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h4l3 5 4-7 4 9h3" />
+                      </svg>
+                    </button>
                     <button
                       onClick={() => onEdit(user)}
                       className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"

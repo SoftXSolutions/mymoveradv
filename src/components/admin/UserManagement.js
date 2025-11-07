@@ -69,6 +69,25 @@ const UserManagement = () => {
     phoneVerified: false
   });
 
+  // Assign Movers modal state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignForUser, setAssignForUser] = useState(null);
+  const [selectedLeadId, setSelectedLeadId] = useState('');
+  const [selectedMovers, setSelectedMovers] = useState([]);
+
+  const getStoredRequests = () => {
+    try {
+      const arr = JSON.parse(localStorage.getItem('myRequests') || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveStoredRequests = (arr) => {
+    localStorage.setItem('myRequests', JSON.stringify(arr));
+  };
+
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -85,6 +104,26 @@ const UserManagement = () => {
       phoneVerified: false
     });
     setShowAddModal(true);
+  };
+
+  const handleOpenAssign = (user) => {
+    setAssignForUser(user);
+    setSelectedLeadId('');
+    setSelectedMovers([]);
+    setShowAssignModal(true);
+  };
+
+  const handleConfirmAssign = () => {
+    if (!selectedLeadId || selectedMovers.length === 0) return;
+    const reqs = getStoredRequests();
+    const updated = reqs.map(r => {
+      if (r.id === selectedLeadId) {
+        return { ...r, assignedMovers: selectedMovers, status: 'Distributed' };
+      }
+      return r;
+    });
+    saveStoredRequests(updated);
+    setShowAssignModal(false);
   };
 
   const handleEditUser = (user) => {
@@ -256,6 +295,7 @@ const UserManagement = () => {
         selectedUsers={selectedUsers}
         onSelectUser={handleSelectUser}
         onSelectAll={handleSelectAll}
+        onAssign={handleOpenAssign}
       />
 
       <UserModal
@@ -284,6 +324,55 @@ const UserManagement = () => {
         totalRecords={filteredUsers.length}
         availableFields={exportFields}
       />
+
+      {/* Assign Movers Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowAssignModal(false)} />
+          <div className="relative bg-white rounded-xl w-[92%] max-w-lg shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-gray-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h3 className="text-lg font-bold text-gray-800">Assign Movers {assignForUser ? `to ${assignForUser.name}` : ''}</h3>
+              <button onClick={() => setShowAssignModal(false)} className="p-2 rounded hover:bg-gray-100">✕</button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Select User Lead</div>
+                <select
+                  value={selectedLeadId}
+                  onChange={(e)=>setSelectedLeadId(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2"
+                >
+                  <option value="">Choose a lead...</option>
+                  {getStoredRequests().map((r)=> (
+                    <option key={r.id} value={r.id}>{r.id} • {[r.from?.city, r.to?.city].filter(Boolean).join(' → ') || 'Lead'}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600 mb-2">Select Movers (multiple)</div>
+                <div className="space-y-2">
+                  {['Premier Moving Co.','Swift Movers LLC','Elite Moving Services','Family First Movers'].map((m,i)=> {
+                    const checked = selectedMovers.includes(m);
+                    return (
+                      <label key={i} className={`flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 ${checked?'border-black':''}`}>
+                        <input type="checkbox" checked={checked} onChange={() => setSelectedMovers(prev => checked ? prev.filter(x=>x!==m) : [...prev, m])} className="rounded" />
+                        <div>
+                          <div className="font-medium text-gray-800">{m}</div>
+                          <div className="text-xs text-gray-500">Professional Plan • 4.8★</div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t bg-gray-50 flex justify-between items-center">
+              <button onClick={() => setShowAssignModal(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
+              <button onClick={handleConfirmAssign} disabled={!selectedLeadId || selectedMovers.length===0} className={`px-4 py-2 rounded-lg text-white ${(!selectedLeadId || selectedMovers.length===0) ? 'bg-gray-400 cursor-not-allowed' : 'bg-black'}`}>Assign {selectedMovers.length>0?`(${selectedMovers.length})`:''}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

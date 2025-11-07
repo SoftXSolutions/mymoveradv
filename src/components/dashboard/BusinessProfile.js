@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { addPendingUpdate, subscribeEvents } from '../../services/updatesStore';
 
 const TabButton = ({ id, active, setActive, icon, label }) => (
   <button
@@ -95,20 +96,7 @@ const BusinessProfile = () => {
     name: 'Atlas Logistics Services, LLC',
     description: 'Atlas Logistics Services, LLC proudly serves our customers with pride, integrity, and attention to the details that matter most to you. This is one of the many things that set us apart from the rest. We are locally owned and operated. Please give us a call today!\n\nWe only specialize in full house moves and no one item or short distance moves.',
     website: 'http://www.atlaslogisticsservices.com',
-    location: 'San Francisco, CA',
-    features: {
-      emergency: false,
-      bilingual: true,
-      creditCard: true,
-      freeEstimates: true,
-      tripCharge: true,
-      residential: true,
-      commercial: true,
-      smallJobs: false,
-      veteranOwned: false,
-      warranty: false
-    },
-    warrantyDescription: ''
+    location: 'San Francisco, CA'
   });
   const [logo, setLogo] = useState(null);
   const logoInputRef = useRef(null);
@@ -122,11 +110,30 @@ const BusinessProfile = () => {
     setLogo(url);
   };
   const [insurances, setInsurances] = useState([
-    { description: 'Automotive - NJH Agency LLC', amount: '1500000', expiration: '2026-06-23', contact: '(973) 391-2956', policy: '9819504498' },
+    { description: 'Automotive - NJH Agency LLC', amount: '1500000', expiration: '2026-06-23', contact: '(973) 391-2956', policy: '9819504498', status: 'active' },
   ]);
   const [licenses, setLicenses] = useState([
-    { description: 'Household Goods Mover - Out of State', state: 'NJ', expiration: '2026-04-09', licenseNo: '4320223' },
+    { description: 'Household Goods Mover - Out of State', state: 'NJ', expiration: '2026-04-09', licenseNo: '4320223', status: 'active' },
   ]);
+
+  // Load persisted tables
+  useEffect(() => {
+    try {
+      const ins = localStorage.getItem(`insurances:${bizForm.name}`);
+      if (ins) setInsurances(JSON.parse(ins));
+      const lic = localStorage.getItem(`licenses:${bizForm.name}`);
+      if (lic) setLicenses(JSON.parse(lic));
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist on change
+  useEffect(() => {
+    try { localStorage.setItem(`insurances:${bizForm.name}`, JSON.stringify(insurances)); } catch {}
+  }, [insurances, bizForm.name]);
+  useEffect(() => {
+    try { localStorage.setItem(`licenses:${bizForm.name}`, JSON.stringify(licenses)); } catch {}
+  }, [licenses, bizForm.name]);
 
   const insuranceTypes = [
     'General Liability',
@@ -169,37 +176,58 @@ const BusinessProfile = () => {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailEditIndex, setEmailEditIndex] = useState(-1);
   const [emailForm, setEmailForm] = useState({ name: '', email: '', settings: { leads: true, messages: true, invoices: true } });
-  const [numbers, setNumbers] = useState([
-    { name: 'Joseph', phone: '(201) 577-6894' },
-    { name: 'Meredith', phone: '(201) 900-3089' },
-  ]);
-  const [showNumber, setShowNumber] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(-1);
-  const [numberForm, setNumberForm] = useState({ name: '', phone: '' });
+  
 
   const addInsurance = () => {
     if (!insForm.type || !insForm.agencyName || !insForm.policyNumber || !insForm.expiration) return;
-    const entry = {
+    addPendingUpdate({
+      moverName: bizForm.name,
+      updateType: 'insurance',
+      details: {
+        type: insForm.type,
+        agencyName: insForm.agencyName,
+        policyNumber: insForm.policyNumber,
+        expiration: insForm.expiration,
+        amount: insForm.amount,
+        contact: `${insForm.agencyContact || ''} ${insForm.agencyPhone || ''}`.trim()
+      }
+    });
+    // show pending row in table
+    const pendingRow = {
       description: `${insForm.type} - ${insForm.agencyName}`,
       amount: insForm.amount,
       expiration: insForm.expiration,
       contact: `${insForm.agencyContact || ''} ${insForm.agencyPhone || ''}`.trim(),
-      policy: insForm.policyNumber
+      policy: insForm.policyNumber,
+      status: 'pending'
     };
-    setInsurances([...insurances, entry]);
+    setInsurances((prev)=> [pendingRow, ...prev]);
     setShowInsModal(false);
     setInsForm({ type: 'General Liability', agencyName: '', agencyContact: '', agencyPhone: '', policyName: '', policyNumber: '', expiration: '', amount: '' });
   };
 
   const addLicense = () => {
     if (!licForm.state || !licForm.type || !licForm.licenseNo || !licForm.name || !licForm.expiration) return;
-    const entry = {
+    addPendingUpdate({
+      moverName: bizForm.name,
+      updateType: 'license',
+      details: {
+        state: licForm.state,
+        type: licForm.type,
+        licenseNo: licForm.licenseNo,
+        name: licForm.name,
+        expiration: licForm.expiration
+      }
+    });
+    // show pending row in table
+    const pendingRow = {
       description: `${licForm.type} ${licForm.name ? '- ' + licForm.name : ''}`.trim(),
       state: licForm.state,
       expiration: licForm.expiration,
-      licenseNo: licForm.licenseNo
+      licenseNo: licForm.licenseNo,
+      status: 'pending'
     };
-    setLicenses([...licenses, entry]);
+    setLicenses((prev)=> [pendingRow, ...prev]);
     setShowLicModal(false);
     setLicForm({ state: 'NJ', type: 'Household Goods Mover - Out of State', licenseNo: '', name: '', expiration: '' });
   };
@@ -211,31 +239,7 @@ const BusinessProfile = () => {
     setShowAdd(false);
   };
 
-  const openAddNumber = () => {
-    setEditingIndex(-1);
-    setNumberForm({ name: '', phone: '' });
-    setShowNumber(true);
-  };
-
-  const openEditNumber = (idx) => {
-    setEditingIndex(idx);
-    setNumberForm(numbers[idx]);
-    setShowNumber(true);
-  };
-
-  const saveNumber = () => {
-    if (!numberForm.name || !numberForm.phone) return;
-    if (editingIndex === -1) {
-      setNumbers([...numbers, numberForm]);
-    } else {
-      const copy = [...numbers];
-      copy[editingIndex] = numberForm;
-      setNumbers(copy);
-    }
-    setShowNumber(false);
-    setEditingIndex(-1);
-    setNumberForm({ name: '', phone: '' });
-  };
+  
 
   const openAddEmail = () => {
     setEmailEditIndex(-1);
@@ -263,6 +267,53 @@ const BusinessProfile = () => {
 
   return (
     <div>
+      {/* Listen for admin verification events and update local state */}
+      {(() => {
+        // subscribe once per mount
+        const _init = (() => {
+          let initialized = false;
+          return () => {
+            if (initialized) return;
+            initialized = true;
+            const unsub = subscribeEvents((evt) => {
+              if (evt.moverName !== bizForm.name) return;
+              if (evt.status === 'verified') {
+                if (evt.updateType === 'insurance') {
+                  const policyStr = String(evt.details.policyNumber || '');
+                  setInsurances((prev) => prev.map(item =>
+                    String(item.policy || '') === policyStr ? { ...item, status: 'active' } : item
+                  ));
+                } else if (evt.updateType === 'license') {
+                  const licStr = String(evt.details.licenseNo || '');
+                  setLicenses((prev) => prev.map(item =>
+                    String(item.licenseNo || '') === licStr ? { ...item, status: 'active' } : item
+                  ));
+                }
+              }
+              if (evt.status === 'rejected') {
+                if (evt.updateType === 'insurance') {
+                  const policyStr = String(evt.details.policyNumber || '');
+                  setInsurances((prev) => prev.map(item =>
+                    String(item.policy || '') === policyStr ? { ...item, status: 'rejected' } : item
+                  ));
+                } else if (evt.updateType === 'license') {
+                  const licStr = String(evt.details.licenseNo || '');
+                  setLicenses((prev) => prev.map(item =>
+                    String(item.licenseNo || '') === licStr ? { ...item, status: 'rejected' } : item
+                  ));
+                }
+              }
+            });
+            // store unsubscribe on window to avoid multiple
+            if (typeof window !== 'undefined') {
+              window.__bizProfileUnsub && window.__bizProfileUnsub();
+              window.__bizProfileUnsub = unsub;
+            }
+          };
+        })();
+        _init();
+        return null;
+      })()}
       {/* Sub Tabs */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
         <div className="flex gap-4 md:gap-6 px-3 md:px-4"> 
@@ -286,13 +337,6 @@ const BusinessProfile = () => {
             setActive={setSubTab}
             label="Manage team"
             icon={<svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M13 7a3 3 0 11-6 0 3 3 0 016 0z"/><path fillRule="evenodd" d="M2 13.5A4.5 4.5 0 016.5 9h7A4.5 4.5 0 0118 13.5V15a1 1 0 01-1 1H3a1 1 0 01-1-1v-1.5z" clipRule="evenodd"/></svg>}
-          />
-          <TabButton
-            id="numbers"
-            active={subTab}
-            setActive={setSubTab}
-            label="Connected numbers"
-            icon={<svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>}
           />
         </div>
       </div>
@@ -358,46 +402,21 @@ const BusinessProfile = () => {
                       <input value={bizForm.website} onChange={(e)=>setBizForm({...bizForm, website:e.target.value})} className="w-full border rounded-md px-3 py-2" />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-800 mb-1">Check all that apply:</div>
-                        {[
-                          ['emergency','Emergency service provided'],
-                          ['bilingual','Bilingual'],
-                          ['creditCard','Credit card accepted'],
-                          ['freeEstimates','Free estimates'],
-                          ['tripCharge','Trip charge'],
-                          ['residential','Residential'],
-                          ['commercial','Commercial'],
-                          ['smallJobs','Small jobs welcome'],
-                          ['veteranOwned','Veteran owned'],
-                          ['warranty','Warranty offered']
-                        ].map(([key,label])=> (
-                          <label key={key} className="flex items-center gap-2 text-sm text-gray-800">
-                            <input type="checkbox" checked={bizForm.features[key]} onChange={(e)=>setBizForm({...bizForm, features:{...bizForm.features, [key]: e.target.checked}})} />
-                            {label}
-                          </label>
-                        ))}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-800 mb-2">Upload company logo</div>
-                        <button type="button" onClick={triggerLogoUpload} className="inline-flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-800 hover:bg-gray-50">
-                          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M3 16a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-3l-2-2H5a2 2 0 00-2 2v10z"/></svg>
-                          Upload
-                        </button>
-                        <div className="mt-2 text-xs text-gray-500">Minimum size: 300 x 300 pixels</div>
-                        <div className="text-xs text-gray-500">Accepted file types: JPG/JPEG, PNG, GIF</div>
-                        <input ref={logoInputRef} onChange={onLogoSelected} type="file" accept="image/png,image/jpeg,image/jpg,image/gif" className="hidden" />
-                        {logo && (
-                          <img src={logo} alt="Logo preview" className="mt-3 w-24 h-24 object-contain rounded border" />
-                        )}
-                      </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-800 mb-2">Upload company logo</div>
+                      <button type="button" onClick={triggerLogoUpload} className="inline-flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-800 hover:bg-gray-50">
+                        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M3 16a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-3l-2-2H5a2 2 0 00-2 2v10z"/></svg>
+                        Upload
+                      </button>
+                      <div className="mt-2 text-xs text-gray-500">Minimum size: 300 x 300 pixels</div>
+                      <div className="text-xs text-gray-500">Accepted file types: JPG/JPEG, PNG, GIF</div>
+                      <input ref={logoInputRef} onChange={onLogoSelected} type="file" accept="image/png,image/jpeg,image/jpg,image/gif" className="hidden" />
+                      {logo && (
+                        <img src={logo} alt="Logo preview" className="mt-3 w-24 h-24 object-contain rounded border" />
+                      )}
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-800 mb-1">Warranty description</label>
-                      <input value={bizForm.warrantyDescription} onChange={(e)=>setBizForm({...bizForm, warrantyDescription:e.target.value})} className="w-full border rounded-md px-3 py-2" />
-                    </div>
+                    
 
                     <div className="pt-2 flex justify-end">
                       <button className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg">Save</button>
@@ -410,12 +429,13 @@ const BusinessProfile = () => {
                 <>
                   <SectionCard title="Insurances" action={<button onClick={() => setShowInsModal(true)} className="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm">Add new insurance</button>}>
                     <div className="overflow-auto -mx-4 md:mx-0">
-                      <table className="min-w-[640px] w-full">
+                      <table className="min-w-[760px] w-full">
                         <thead>
                           <tr className="bg-orange-600 text-white text-sm">
                             <th className="text-left py-3 px-4 rounded-tl-lg">Description</th>
                             <th className="text-left py-3 px-4">Amount</th>
                             <th className="text-left py-3 px-4">Expiration Date</th>
+                            <th className="text-left py-3 px-4">Status</th>
                             <th className="text-right py-3 px-4 rounded-tr-lg">Action</th>
                           </tr>
                         </thead>
@@ -429,6 +449,9 @@ const BusinessProfile = () => {
                               </td>
                               <td className="py-3 px-4 text-gray-800">{ins.amount}</td>
                               <td className="py-3 px-4 text-gray-800">{ins.expiration}</td>
+                              <td className="py-3 px-4">
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${ins.status==='active'?'bg-green-100 text-green-700': ins.status==='rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{ins.status || 'pending'}</span>
+                              </td>
                               <td className="py-3 px-4">
                                 <div className="flex justify-end">
                                   <button className="text-orange-600 hover:text-orange-700 text-sm">Update</button>
@@ -483,12 +506,13 @@ const BusinessProfile = () => {
 
                   <SectionCard title="Licensing" action={<button onClick={() => setShowLicModal(true)} className="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm">Add new license</button>}>
                     <div className="overflow-auto -mx-4 md:mx-0">
-                      <table className="min-w-[640px] w-full">
+                      <table className="min-w-[760px] w-full">
                         <thead>
                           <tr className="bg-orange-600 text-white text-sm">
                             <th className="text-left py-3 px-4 rounded-tl-lg">Description</th>
                             <th className="text-left py-3 px-4">State</th>
                             <th className="text-left py-3 px-4">Expiration Date</th>
+                            <th className="text-left py-3 px-4">Status</th>
                             <th className="text-right py-3 px-4 rounded-tr-lg">Action</th>
                           </tr>
                         </thead>
@@ -501,6 +525,9 @@ const BusinessProfile = () => {
                               </td>
                               <td className="py-3 px-4 text-gray-800">{lic.state}</td>
                               <td className="py-3 px-4 text-gray-800">{lic.expiration}</td>
+                              <td className="py-3 px-4">
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${lic.status==='active'?'bg-green-100 text-green-700': lic.status==='rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{lic.status || 'pending'}</span>
+                              </td>
                               <td className="py-3 px-4">
                                 <div className="flex justify-end">
                                   <button className="text-orange-600 hover:text-orange-700 text-sm">Update</button>
@@ -621,11 +648,10 @@ const BusinessProfile = () => {
           <div className="space-y-5">
             <h2 className="text-2xl font-bold text-gray-800">Notification preferences</h2>
 
-            {/* Notification sub tabs */}
+            {/* Notification sub tabs (phone removed) */}
             <div className="bg-white border rounded-lg overflow-x-auto">
               <div className="flex gap-4 px-3">
                 <TabButton id="email" active={notifTab} setActive={setNotifTab} label="Email" icon={<svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>} />
-                <TabButton id="phone" active={notifTab} setActive={setNotifTab} label="Phone call" icon={<svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>} />
                 <TabButton id="sms" active={notifTab} setActive={setNotifTab} label="Text messaging" icon={<svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17 8c0 3.866-3.582 7-8 7a8.94 8.94 0 01-4-.938L1 15l.938-4A8.94 8.94 0 011 8c0-3.866 3.582-7 8-7s8 3.134 8 7z"/></svg>} />
               </div>
             </div>
@@ -642,13 +668,11 @@ const BusinessProfile = () => {
                       </div>
                     </div>
                     <div className="divide-y">
-                      <NotifRow title="Leads and Opportunities" subtitle="Every time you get a new lead or Opportunity, we'll email you." value={e.settings.leads} onChange={(v)=>{
+                      <NotifRow title="Leads and Opportunities" subtitle="Every time you get a new lead or Opportunity, we'll email you" value={e.settings.leads} onChange={(v)=>{
                         const copy=[...emails]; copy[idx] = { ...copy[idx], settings: { ...copy[idx].settings, leads: v } }; setEmails(copy);
                       }} />
-                      <NotifRow title="Messages from customers" subtitle="We'll send you an email when you have new messages from customers." value={e.settings.messages} onChange={(v)=>{
-                        const copy=[...emails]; copy[idx] = { ...copy[idx], settings: { ...copy[idx].settings, messages: v } }; setEmails(copy);
-                      }} />
-                      <NotifRow title="Invoice alerts" subtitle="We'll email you when a payment is due." value={e.settings.invoices} onChange={(v)=>{
+                      
+                      <NotifRow title="Invoice alerts" subtitle="We'll email you when a payment is due" value={e.settings.invoices} onChange={(v)=>{
                         const copy=[...emails]; copy[idx] = { ...copy[idx], settings: { ...copy[idx].settings, invoices: v } }; setEmails(copy);
                       }} />
                     </div>
@@ -659,7 +683,7 @@ const BusinessProfile = () => {
 
                 <div className="bg-white rounded-xl border p-4">
                   <div className="text-lg font-semibold text-gray-800 mb-1">Newsletter subscriptions</div>
-                  <p className="text-sm text-gray-600 mb-3">Stay up to date on industry trends, offers, and product updates.</p>
+                  <p className="text-sm text-gray-600 mb-3">Stay up to date on industry trends, offers, and product updates</p>
                   <button className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg">Subscription settings</button>
                 </div>
 
@@ -682,7 +706,7 @@ const BusinessProfile = () => {
             )}
 
             {notifTab !== 'email' && (
-              <EmptyState title="Coming soon" subtitle="Configure {phone calls / text messaging} notifications here." ctaLabel="Okay" onCta={()=>{}} />
+              <EmptyState title="Coming soon" subtitle="Configure text messaging notifications here" ctaLabel="Okay" onCta={()=>{}} />
             )}
           </div>
         )}
@@ -742,62 +766,6 @@ const BusinessProfile = () => {
                   <option>Manager</option>
                   <option>Staff</option>
                 </select>
-              </div>
-            </Modal>
-          </div>
-        )}
-
-        {subTab === 'numbers' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">Connected numbers</h2>
-                <p className="text-sm text-gray-600">Manage all of the phone numbers you use to call and text customers.</p>
-                <p className="text-sm text-gray-600 mt-1">Looking for your notifications preferences phone number? Go to <span className="text-orange-600 font-medium">notifications</span>.</p>
-              </div>
-              <div className="flex gap-2">
-                <button className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Manage multiple numbers</button>
-                <button onClick={openAddNumber} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg shadow-sm">Add number</button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-              <div className="overflow-auto">
-                <table className="min-w-[600px] w-full">
-                  <thead>
-                    <tr className="bg-orange-600 text-white text-sm">
-                      <th className="text-left py-3 px-4 rounded-tl-lg">Name</th>
-                      <th className="text-left py-3 px-4">Phone</th>
-                      <th className="text-right py-3 px-4 rounded-tr-lg">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {numbers.map((n, idx) => (
-                      <tr key={idx} className="border-b last:border-0">
-                        <td className="py-3 px-4 text-gray-800">{n.name}</td>
-                        <td className="py-3 px-4 text-gray-800">{n.phone}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex justify-end gap-3">
-                            <button onClick={() => openEditNumber(idx)} className="text-orange-600 hover:text-orange-700">Edit</button>
-                            <button onClick={() => setNumbers(numbers.filter((_, i) => i !== idx))} className="text-red-600 hover:text-red-700">Delete</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="px-4 py-3 text-xs text-gray-500 border-t bg-gray-50">Showing 1-{numbers.length} of {numbers.length} results</div>
-            </div>
-
-            <Modal open={showNumber} onClose={() => setShowNumber(false)} title={editingIndex === -1 ? 'Add number' : 'Edit number'} onPrimary={saveNumber} primaryLabel={editingIndex === -1 ? 'Add' : 'Save'}>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1 font-medium">Name</label>
-                <input value={numberForm.name} onChange={(e)=>setNumberForm({...numberForm, name:e.target.value})} className="w-full border rounded-md px-3 py-2 text-sm" placeholder="Contact name" />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1 font-medium">Phone</label>
-                <input value={numberForm.phone} onChange={(e)=>setNumberForm({...numberForm, phone:e.target.value})} className="w-full border rounded-md px-3 py-2 text-sm" placeholder="(201) 555-0123" />
               </div>
             </Modal>
           </div>

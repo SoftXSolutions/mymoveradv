@@ -11,6 +11,14 @@ const getStoredRequests = () => {
   }
 };
 
+// Lightweight lookup for mover details used in the View Movers modal and profile
+const MOVERS_INFO = {
+  'Premier Moving Co.': { rating: 4.8, reviews: 2100, location: 'San Francisco, CA', plan: 'Premium', phone: '+1 (415) 555-1020', email: 'hello@premiermoving.com', website: 'https://premiermoving.com' },
+  'Swift Movers LLC': { rating: 4.6, reviews: 1800, location: 'Oakland, CA', plan: 'Professional', phone: '+1 (510) 555-2211', email: 'contact@swiftmovers.com', website: 'https://swiftmovers.com' },
+  'Elite Moving Services': { rating: 4.9, reviews: 3200, location: 'San Jose, CA', plan: 'Premium', phone: '+1 (408) 555-8744', email: 'team@elitemoving.com', website: 'https://elitemoving.com' },
+  'Family First Movers': { rating: 4.7, reviews: 1400, location: 'San Mateo, CA', plan: 'Professional', phone: '+1 (650) 555-9900', email: 'support@familyfirstmovers.com', website: 'https://familyfirstmovers.com' },
+};
+
 const mockTruckers = [
   { 
     id: 'elite-moving', 
@@ -61,6 +69,8 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const [tab, setTab] = useState('requests');
   const [requests, setRequests] = useState(getStoredRequests());
+  const [showMovers, setShowMovers] = useState(false);
+  const [moversFor, setMoversFor] = useState(null);
 
   useEffect(() => {
     setRequests(getStoredRequests());
@@ -72,7 +82,7 @@ const UserDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const t = params.get('tab');
-    if (t === 'truckers' || t === 'requests') setTab(t);
+    if (t === 'requests') setTab(t);
   }, [location.search]);
 
   const setTabAndUrl = (t) => {
@@ -83,6 +93,7 @@ const UserDashboard = () => {
   };
 
   return (
+    <>
     <div className="min-h-[calc(100vh-8rem)] bg-yellow-50/40 py-8">
       <div className="container mx-auto px-4">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-[0_6px_24px_rgba(0,0,0,0.08)]">
@@ -96,7 +107,6 @@ const UserDashboard = () => {
           <div className="px-5 border-b">
             <div className="flex gap-6 overflow-x-auto">
               <button onClick={()=>setTabAndUrl('requests')} className={`py-3 border-b-2 -mb-px font-medium ${tab==='requests'?'border-orange-500 text-orange-600':'border-transparent text-gray-600 hover:text-gray-800'}`}>My Requests</button>
-              <button onClick={()=>setTabAndUrl('truckers')} className={`py-3 border-b-2 -mb-px font-medium ${tab==='truckers'?'border-orange-500 text-orange-600':'border-transparent text-gray-600 hover:text-gray-800'}`}>Movers</button>
             </div>
           </div>
 
@@ -129,7 +139,11 @@ const UserDashboard = () => {
                           {r.category && <span className="px-2 py-0.5 rounded text-xs bg-purple-50 text-purple-700 border border-purple-200">{r.category}</span>}
                           {r.moveType && <span className="px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-700 border border-blue-200">{r.moveType}</span>}
                           {r.property && <span className="px-2 py-0.5 rounded text-xs bg-gray-50 text-gray-700 border">{r.property}</span>}
-                          <span className="ml-auto px-2.5 py-1 bg-gray-100 rounded-full text-xs text-gray-700">{r.status || 'Submitted'}</span>
+                          {/* Removed status badge per requirements */}
+                          <span className="ml-auto" />
+                          {Array.isArray(r.assignedMovers) && r.assignedMovers.length>0 && (
+                            <button onClick={()=>{setMoversFor(r); setShowMovers(true);}} className="px-3 py-1 text-xs rounded-md border border-gray-300 hover:bg-gray-50">View Movers</button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -137,73 +151,59 @@ const UserDashboard = () => {
                 )}
               </div>
             )}
-
-            {tab==='truckers' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockTruckers.map(t => (
-                  <Link to={`/truckers/${t.id}`} key={t.id} className="block bg-white rounded-xl p-5 border border-gray-200 shadow-[0_6px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_28px_rgba(0,0,0,0.12)] transition-all hover:-translate-y-1">
-                    {/* Header with name and badges */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-gray-900 text-base">{t.name}</h3>
-                          {t.verified && (
-                            <span className="text-green-500 text-xs">✓</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-600 mb-2">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                          </svg>
-                          <span>{t.distance}</span>
-                        </div>
-                      </div>
-                      <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${
-                        t.plan === 'Premium' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}>
-                        {t.plan}
-                      </span>
-                    </div>
-
-                    {/* Rating and reviews */}
-                    <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
-                      <span className="text-yellow-500 text-sm">★</span>
-                      <span className="font-semibold text-gray-900 text-sm">{t.rating}</span>
-                      <span className="text-gray-500 text-xs">({t.reviews.toLocaleString()} reviews)</span>
-                    </div>
-
-                    {/* Quick stats */}
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">Response Time</span>
-                        <span className="font-medium text-gray-900">{t.responseTime}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">Experience</span>
-                        <span className="font-medium text-gray-900">{t.yearsInBusiness} years</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">Total Moves</span>
-                        <span className="font-medium text-gray-900">{t.totalMoves.toLocaleString()}</span>
-                      </div>
-                    </div>
-
-                    {/* Estimated price */}
-                    <div className="pt-3 border-t border-gray-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">Estimated</span>
-                        <span className="font-bold text-gray-900 text-sm">{t.estimatedPrice}</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
     </div>
+    {showMovers && moversFor && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40" onClick={() => { setShowMovers(false); }} />
+        <div className="relative bg-white rounded-xl w-[92%] max-w-lg shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-gray-200" onClick={(e)=>e.stopPropagation()}>
+          <div className="flex items-center justify-between px-5 py-4 border-b">
+            <h3 className="text-lg font-bold text-gray-800">Selected Movers for {moversFor.id}</h3>
+            <button onClick={() => setShowMovers(false)} className="p-2 rounded hover:bg-gray-100">✕</button>
+          </div>
+          <div className="p-5">
+            <div className="space-y-2">
+              {moversFor.assignedMovers.map((m,i)=> {
+                const info = MOVERS_INFO[m] || {};
+                return (
+                  <button
+                    type="button"
+                    key={i}
+                    onClick={(e)=>{ e.preventDefault(); e.stopPropagation(); setShowMovers(false); navigate(`/movers/${encodeURIComponent(m)}`); }}
+                    className="w-full text-left cursor-pointer"
+                  >
+                    <div className="p-3 border rounded-lg hover:bg-gray-50">
+                      <div className="font-medium text-gray-800">{m}</div>
+                      <div className="mt-1 text-xs text-gray-600 flex items-center gap-2 flex-wrap">
+                        <span className="text-yellow-500">★</span>
+                        <span>{info.rating ?? '—'}</span>
+                        {info.reviews ? (<><span className="text-gray-400">•</span><span>{info.reviews.toLocaleString()} reviews</span></>) : null}
+                        {info.location ? (<><span className="text-gray-400">•</span><span>{info.location}</span></>) : null}
+                        {info.plan ? (
+                          <span className={`ml-auto px-2 py-0.5 rounded text-[10px] border ${info.plan==='Premium'?'bg-purple-50 text-purple-700 border-purple-200':'bg-blue-50 text-blue-700 border-blue-200'}`}>{info.plan}</span>
+                        ) : null}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">Assigned by admin</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {(!moversFor.assignedMovers || moversFor.assignedMovers.length===0) && (
+              <div className="text-sm text-gray-600">No movers assigned yet.</div>
+            )}
+          </div>
+          <div className="px-5 py-4 border-t bg-gray-50 flex justify-end">
+            <button onClick={() => setShowMovers(false)} className="px-4 py-2 rounded-lg border">Close</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
-};
+}
 
 export default UserDashboard;

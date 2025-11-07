@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PageHeader from '../PageHeader';
 import LogoutButton from '../../common/LogoutButton';
 import SearchBar from '../SearchBar';
 import BulkActions from '../BulkActions';
 import MoverTable from './MoverTable';
 import MoverDetailsModal from './MoverDetailsModal';
+import CompanyInfoModal from './CompanyInfoModal';
+import { getPendingUpdates, subscribe, resolveUpdate } from '../../../services/updatesStore';
 import { ExportButton, ExportModal } from '../export';
 import { 
   exportToCSV, 
@@ -159,12 +161,22 @@ const MoverManagement = () => {
     }
   ]);
 
+  const [activeTab, setActiveTab] = useState('new'); // 'new' | 'updates'
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedMovers, setSelectedMovers] = useState([]);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedMover, setSelectedMover] = useState(null);
+  
+  // Pending updates from movers (shared store)
+  const [pendingUpdates, setPendingUpdates] = useState(getPendingUpdates());
+
+  useEffect(() => {
+    const unsub = subscribe((list) => setPendingUpdates(list));
+    return unsub;
+  }, []);
 
   const filteredMovers = movers.filter(mover => {
     const matchesSearch = 
@@ -216,6 +228,73 @@ const MoverManagement = () => {
       setMovers(movers.filter(m => m.id !== mover.id));
       setShowDetailsModal(false);
       alert(`${mover.name} has been rejected. Reason: ${reason}`);
+    }
+  };
+
+  const handleCompanyClick = (update) => {
+    // Find mover by name from update or use moverId
+    const mover = movers.find(m => m.name === update.moverName || m.id === update.moverId);
+    // If not found (e.g., name mismatch), build a minimal profile from the update
+    const fallback = {
+      id: update.moverId || `temp-${update.id}`,
+      name: update.moverName || 'Unknown Mover',
+      location: '-',
+      status: 'pending',
+      plan: 'Not Assigned',
+      planExpiry: 'N/A',
+      rating: 0,
+      leads: 0,
+      conversionRate: 0,
+      revenue: 0,
+      insuranceStatus: update.updateType === 'insurance' ? 'pending' : 'pending',
+      insuranceExpiry: update.details?.expiration || 'N/A',
+      email: '',
+      phone: '',
+      website: '',
+      address: '',
+      businessLicense: update.updateType === 'license' ? update.details?.licenseNo : '',
+      insuranceNumber: update.updateType === 'insurance' ? update.details?.policyNumber : '',
+      yearsInBusiness: '',
+      description: '',
+      documents: {}
+    };
+
+    setSelectedMover(mover || fallback);
+    setShowCompanyModal(true);
+  };
+
+  const handleVerifyUpdate = (update) => {
+    if (window.confirm(`Verify ${update.updateType} update for ${update.moverName}?`)) {
+      // Update mover's insurance/license locally
+      setMovers(movers.map(m => {
+        if (m.name === update.moverName || m.id === update.moverId) {
+          if (update.updateType === 'insurance') {
+            return {
+              ...m,
+              insuranceStatus: 'valid',
+              insuranceExpiry: update.details.expiration,
+              insuranceNumber: update.details.policyNumber
+            };
+          } else if (update.updateType === 'license') {
+            return {
+              ...m,
+              businessLicense: update.details.licenseNo
+            };
+          }
+        }
+        return m;
+      }));
+      // Resolve in shared store
+      resolveUpdate(update.id, 'verified');
+      alert(`${update.updateType} verified for ${update.moverName}`);
+    }
+  };
+
+  const handleRejectUpdate = (update) => {
+    const reason = window.prompt('Reason for rejection:');
+    if (reason) {
+      resolveUpdate(update.id, 'rejected', { reason });
+      alert(`${update.updateType} update rejected for ${update.moverName}. Reason: ${reason}`);
     }
   };
 
@@ -311,7 +390,40 @@ const MoverManagement = () => {
         }
       />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {/* Tabs */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto mb-6">
+        <div className="flex gap-6 px-4">
+          <button
+            onClick={() => setActiveTab('new')}
+            className={`py-3 border-b-2 font-medium transition-colors whitespace-nowrap text-sm md:text-base ${
+              activeTab === 'new'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            New Movers
+          </button>
+          <button
+            onClick={() => setActiveTab('updates')}
+            className={`py-3 border-b-2 font-medium transition-colors whitespace-nowrap text-sm md:text-base ${
+              activeTab === 'updates'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Updates
+            {pendingUpdates.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-orange-500 text-white text-xs rounded-full">
+                {pendingUpdates.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'new' && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="flex-1">
           <SearchBar
             value={searchQuery}
@@ -369,16 +481,145 @@ const MoverManagement = () => {
         </div>
       )}
 
-      <MoverTable
-        movers={filteredMovers}
-        onViewDetails={handleViewDetails}
-        onEdit={handleEdit}
-        onSuspend={handleSuspend}
-        onDelete={handleDelete}
-        selectedMovers={selectedMovers}
-        onSelectMover={handleSelectMover}
-        onSelectAll={handleSelectAll}
-      />
+          <MoverTable
+            movers={filteredMovers}
+            onViewDetails={handleViewDetails}
+            onEdit={handleEdit}
+            onSuspend={handleSuspend}
+            onDelete={handleDelete}
+            selectedMovers={selectedMovers}
+            onSelectMover={handleSelectMover}
+            onSelectAll={handleSelectAll}
+          />
+        </>
+      )}
+
+      {activeTab === 'updates' && (
+        <div className="space-y-4">
+          {pendingUpdates.length === 0 ? (
+            <div className="bg-white rounded-xl border p-12 text-center">
+              <div className="text-gray-400 text-4xl mb-3">📋</div>
+              <div className="text-gray-600 font-medium">No pending updates</div>
+              <p className="text-sm text-gray-500 mt-1">When movers update their insurance or licenses, they'll appear here for verification.</p>
+            </div>
+          ) : (
+            pendingUpdates.map((update) => {
+              // Find mover to get logo
+              const mover = movers.find(m => m.name === update.moverName || m.id === update.moverId);
+              const CompanyLogo = () => {
+                if (mover?.logo) {
+                  return <img src={mover.logo} alt={update.moverName} className="w-full h-full object-cover" />;
+                }
+                return (
+                  <div className="w-full h-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-lg font-bold">
+                    {update.moverName.charAt(0).toUpperCase()}
+                  </div>
+                );
+              };
+
+              return (
+              <div key={update.id} className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    {/* Company Logo - Clickable */}
+                    <div 
+                      className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-orange-500 transition shadow-md"
+                      onClick={() => handleCompanyClick(update)}
+                      title="View company profile"
+                    >
+                      <CompanyLogo />
+                    </div>
+                    <div>
+                      <h3 
+                        className="font-semibold text-gray-800 text-lg cursor-pointer hover:text-orange-600 transition"
+                        onClick={() => handleCompanyClick(update)}
+                      >
+                        {update.moverName}
+                      </h3>
+                      <p className="text-sm text-gray-500">{update.submittedAt}</p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">
+                    {update.updateType === 'insurance' ? '🛡️ Insurance' : '📜 License'}
+                  </span>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    {update.updateType === 'insurance' ? (
+                      <>
+                        <div>
+                          <span className="text-gray-600">Type:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.type}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Agency:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.agencyName}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Policy #:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.policyNumber}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Expiration:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.expiration}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Amount:</span>
+                          <span className="ml-2 font-medium text-gray-800">${parseInt(update.details.amount).toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Contact:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.contact}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <span className="text-gray-600">State:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.state}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Type:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.type}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">License #:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.licenseNo}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Name:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.name}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Expiration:</span>
+                          <span className="ml-2 font-medium text-gray-800">{update.details.expiration}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleVerifyUpdate(update)}
+                    className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-lg font-medium transition shadow-[0_4px_0_0_rgb(22,101,52)] hover:shadow-[0_2px_0_0_rgb(22,101,52)] active:shadow-[0_0px_0_0_rgb(22,101,52)] hover:translate-y-[2px] active:translate-y-[4px] text-sm"
+                  >
+                    ✓ Verify
+                  </button>
+                  <button
+                    onClick={() => handleRejectUpdate(update)}
+                    className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg font-medium transition shadow-[0_4px_0_0_rgb(127,29,29)] hover:shadow-[0_2px_0_0_rgb(127,29,29)] active:shadow-[0_0px_0_0_rgb(127,29,29)] hover:translate-y-[2px] active:translate-y-[4px] text-sm"
+                  >
+                    ✗ Reject
+                  </button>
+                </div>
+              </div>
+              )
+            })
+          )}
+        </div>
+      )}
 
       <MoverDetailsModal
         isOpen={showDetailsModal}
@@ -386,6 +627,12 @@ const MoverManagement = () => {
         mover={selectedMover}
         onApprove={handleApprove}
         onReject={handleReject}
+      />
+
+      <CompanyInfoModal
+        isOpen={showCompanyModal}
+        onClose={() => setShowCompanyModal(false)}
+        mover={selectedMover}
       />
 
       <ExportModal

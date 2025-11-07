@@ -286,12 +286,12 @@ const Dashboard = () => {
                                     </div>
                                 </div>
                             )}
-                            <button onClick={()=>setShowProfile(true)} className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm">
                                 <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                                    M
+                                    {profile?.business?.company?.[0] || 'M'}
                                 </div>
-                                <span className="hidden sm:inline font-medium text-gray-700 text-sm">Profile</span>
-                            </button>
+                                <span className="hidden sm:inline font-medium text-gray-700 text-sm">{profile?.business?.company || 'Company'}</span>
+                            </div>
                             <LogoutButton className="ml-1" />
                         </div>
                     </div>
